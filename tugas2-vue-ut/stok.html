@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stok Bahan Ajar - SITTA UT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>📚 Stok Bahan Ajar UT</h1>
+      <nav>
+        <a href="index.html">Beranda</a> | 
+        <a href="tracking.html">Tracking DO</a>
+      </nav>
+    </header>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <h3>Filter & Sort</h3>
+      
+      <div class="filter-row">
+        <label>UT-Daerah:</label>
+        <select v-model="filterUpbjj">
+          <option value="">Semua UT-Daerah</option>
+          <option v-for="upbjj in upbjjList" :key="upbjj" :value="upbjj">{{ upbjj }}</option>
+        </select>
+      </div>
+
+      <div class="filter-row" v-show="filterUpbjj">
+        <label>Kategori:</label>
+        <select v-model="filterKategori">
+          <option value="">Semua Kategori</option>
+          <option v-for="kategori in availableKategori" :key="kategori" :value="kategori">{{ kategori }}</option>
+        </select>
+      </div>
+
+      <div class="filter-row">
+        <label>
+          <input type="checkbox" v-model="filterReorder"> 
+          Hanya stok yang perlu Re-order (Stok < Safety atau Kosong)
+        </label>
+      </div>
+
+      <div class="filter-row">
+        <label>Sort berdasarkan:</label>
+        <select v-model="sortBy">
+          <option value="">Tidak diurutkan</option>
+          <option value="judul">Judul (A-Z)</option>
+          <option value="qty">Stok (Terkecil)</option>
+          <option value="harga">Harga (Termurah)</option>
+        </select>
+      </div>
+
+      <button @click="resetFilter" class="btn-reset">Reset Filter</button>
+    </div>
+
+    <!-- Add New Item Form -->
+    <div class="add-form" v-if="showAddForm">
+      <h3>Tambah Bahan Ajar Baru</h3>
+      <form @submit.prevent="tambahBahanAjar">
+        <input v-model="newItem.kode" placeholder="Kode MK (contoh: EKMA4116)" required>
+        <input v-model="newItem.judul" placeholder="Nama Mata Kuliah" required>
+        
+        <select v-model="newItem.kategori" required>
+          <option value="">Pilih Kategori</option>
+          <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
+        </select>
+        
+        <select v-model="newItem.upbjj" required>
+          <option value="">Pilih UT-Daerah</option>
+          <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+        </select>
+        
+        <input v-model="newItem.lokasiRak" placeholder="Lokasi Rak (contoh: R1-A3)" required>
+        <input v-model.number="newItem.harga" type="number" placeholder="Harga" required>
+        <input v-model.number="newItem.qty" type="number" placeholder="Jumlah Stok" required>
+        <input v-model.number="newItem.safety" type="number" placeholder="Safety Stock" required>
+        <input v-model="newItem.catatanHTML" placeholder="Catatan (HTML)">
+        
+        <div class="form-buttons">
+          <button type="submit" class="btn-primary">Simpan</button>
+          <button type="button" @click="showAddForm = false" class="btn-secondary">Batal</button>
+        </div>
+      </form>
+    </div>
+
+    <button v-else @click="showAddForm = true" class="btn-add">+ Tambah Bahan Ajar Baru</button>
+
+    <!-- Edit Form -->
+    <div class="edit-form" v-if="editingItem">
+      <h3>Edit Bahan Ajar: {{ editingItem.kode }}</h3>
+      <form @submit.prevent="simpanEdit">
+        <input v-model="editingItem.judul" placeholder="Nama Mata Kuliah" required>
+        <input v-model="editingItem.lokasiRak" placeholder="Lokasi Rak" required>
+        <input v-model.number="editingItem.harga" type="number" placeholder="Harga" required>
+        <input v-model.number="editingItem.qty" type="number" placeholder="Jumlah Stok" required>
+        <input v-model.number="editingItem.safety" type="number" placeholder="Safety Stock" required>
+        <input v-model="editingItem.catatanHTML" placeholder="Catatan (HTML)">
+        
+        <div class="form-buttons">
+          <button type="submit" class="btn-primary">Simpan</button>
+          <button type="button" @click="editingItem = null" class="btn-secondary">Batal</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Kode/Nama MK</th>
+            <th>Kategori</th>
+            <th>UT-Daerah</th>
+            <th>Lokasi Rak</th>
+            <th>Harga</th>
+            <th>Stok</th>
+            <th>Safety</th>
+            <th>Status</th>
+            <th>Catatan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in filteredStok" :key="item.kode">
+            <td>
+              <strong>{{ item.kode }}</strong><br>
+              <span v-text="item.judul"></span>
+            </td>
+            <td>{{ item.kategori }}</td>
+            <td>{{ item.upbjj }}</td>
+            <td>{{ item.lokasiRak }}</td>
+            <td>Rp {{ formatHarga(item.harga) }}</td>
+            <td>{{ item.qty }}</td>
+            <td>{{ item.safety }}</td>
+            <td>
+              <span v-if="item.qty === 0" class="status-kosong">
+                ❌ Kosong
+              </span>
+              <span v-else-if="item.qty < item.safety" class="status-menipis">
+                ⚠️ Menipis
+              </span>
+              <span v-else class="status-aman">
+                ✅ Aman
+              </span>
+            </td>
+            <td><span v-html="item.catatanHTML"></span></td>
+            <td>
+              <button @click="editItem(item)" class="btn-edit">Edit</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p v-if="filteredStok.length === 0" class="no-data">
+        Tidak ada data yang sesuai dengan filter
+      </p>
+    </div>
+
+    <footer>
+      <p>Total Item: {{ filteredStok.length }} dari {{ stok.length }}</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+  <script src="js/stok-app.js"></script>
+</body>
+</html>
