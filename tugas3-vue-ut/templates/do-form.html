@@ -1,0 +1,72 @@
+<template id="tpl-do-form">
+  <div class="form-section">
+    <h3>Tambah Delivery Order Baru</h3>
+    
+    <form @submit.prevent="submitForm" @keydown="handleKeydown">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nomor DO:</label>
+          <input v-model="formData.nomorDO" disabled>
+        </div>
+
+        <div class="form-group">
+          <label>NIM:</label>
+          <input v-model="formData.nim" placeholder="Masukkan NIM" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nama:</label>
+          <input v-model="formData.nama" placeholder="Masukkan Nama" required>
+        </div>
+
+        <div class="form-group">
+          <label>Ekspedisi:</label>
+          <select v-model="formData.ekspedisi" required>
+            <option value="">Pilih Ekspedisi</option>
+            <option v-for="e in pengirimanList" :key="e.kode" :value="e.kode">
+              {{ e.nama }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Paket Bahan Ajar:</label>
+          <select v-model="formData.paketKode" required>
+            <option value="">Pilih Paket</option>
+            <option v-for="p in paket" :key="p.kode" :value="p.kode">
+              {{ p.kode }} - {{ p.nama }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" v-if="selectedPaket">
+          <label>Detail Paket:</label>
+          <div class="paket-detail">
+            <p><strong>{{ selectedPaket.nama }}</strong></p>
+            <p>Isi: {{ selectedPaket.isi.join(', ') }}</p>
+            <p>Harga: {{ selectedPaket.harga | currency }}</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tanggal Kirim:</label>
+          <input v-model="formData.tanggalKirim" type="date" required>
+        </div>
+
+        <div class="form-group">
+          <label>Total Harga:</label>
+          <input :value="formData.total | currency" disabled>
+        </div>
+      </div>
+
+      <div class="form-buttons">
+        <button type="submit" class="btn-primary">Simpan DO</button>
+        <button type="button" @click="cancel" class="btn-secondary">Batal</button>
+      </div>
+      
+      <p style="font-size: 12px; color: #666; margin-top: 10px;">
+        * Tekan Enter untuk menyimpan
+      </p>
+    </form>
+  </div>
+</template>

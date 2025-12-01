@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stok Bahan Ajar - SITTA UT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>📚 Stok Bahan Ajar UT</h1>
+      <nav>
+        <a href="index.html">Beranda</a> | 
+        <a href="tracking-complete.html">Tracking DO</a>
+      </nav>
+    </header>
+
+    <!-- Komponen Filter -->
+    <ba-stock-filter
+      :upbjj-list="upbjjList"
+      :kategori-list="kategoriList"
+      :filter-upbjj.sync="filterUpbjj"
+      :filter-kategori.sync="filterKategori"
+      :filter-reorder.sync="filterReorder"
+      :sort-by.sync="sortBy"
+      @reset-filter="resetFilter">
+    </ba-stock-filter>
+
+    <!-- Komponen Form Tambah -->
+    <ba-order-form
+      v-if="showAddForm"
+      :upbjj-list="upbjjList"
+      :kategori-list="kategoriList"
+      mode="add"
+      @add-item="handleAddItem"
+      @cancel="cancelForm">
+    </ba-order-form>
+
+    <button v-else @click="showAddForm = true" class="btn-add">+ Tambah Bahan Ajar Baru</button>
+
+    <!-- Komponen Form Edit -->
+    <ba-order-form
+      v-if="editingItem"
+      :upbjj-list="upbjjList"
+      :kategori-list="kategoriList"
+      :item="editingItem"
+      mode="edit"
+      @update-item="handleUpdateItem"
+      @cancel="cancelForm">
+    </ba-order-form>
+
+    <!-- Komponen Tabel Stok -->
+    <ba-stock-table
+      :stok="filteredStok"
+      @edit-item="handleEditItem"
+      @delete-item="handleDeleteItem">
+    </ba-stock-table>
+
+    <footer>
+      <p>Total Item: {{ filteredStok.length }} dari {{ stok.length }}</p>
+    </footer>
+  </div>
+
+  <!-- TEMPLATES -->
+  <!-- Template: Stock Filter -->
+  <script type="text/x-template" id="tpl-stock-filter">
+    <div class="filter-section">
+      <h3>Filter & Sort</h3>
+      
+      <div class="filter-row">
+        <label>UT-Daerah:</label>
+        <select :value="filterUpbjj" @change="updateFilterUpbjj($event.target.value)">
+          <option value="">Semua UT-Daerah</option>
+          <option v-for="upbjj in upbjjList" :key="upbjj" :value="upbjj">{{ upbjj }}</option>
+        </select>
+      </div>
+
+      <div class="filter-row" v-show="filterUpbjj">
+        <label>Kategori:</label>
+        <select :value="filterKategori" @change="updateFilterKategori($event.target.value)">
+          <option value="">Semua Kategori</option>
+          <option v-for="kategori in availableKategori" :key="kategori" :value="kategori">{{ kategori }}</option>
+        </select>
+      </div>
+
+      <div class="filter-row">
+        <label>
+          <input type="checkbox" :checked="filterReorder" @change="updateFilterReorder($event.target.checked)"> 
+          Hanya stok yang perlu Re-order (Stok < Safety atau Kosong)
+        </label>
+      </div>
+
+      <div class="filter-row">
+        <label>Sort berdasarkan:</label>
+        <select :value="sortBy" @change="updateSortBy($event.target.value)">
+          <option value="">Tidak diurutkan</option>
+          <option value="judul">Judul (A-Z)</option>
+          <option value="qty">Stok (Terkecil)</option>
+          <option value="harga">Harga (Termurah)</option>
+        </select>
+      </div>
+
+      <button @click="resetFilter" class="btn-reset">Reset Filter</button>
+    </div>
+  </script>
+
+  <!-- Template: Order Form -->
+  <script type="text/x-template" id="tpl-order-form">
+    <div :class="mode === 'add' ? 'add-form' : 'edit-form'">
+      <h3>{{ mode === 'add' ? 'Tambah Bahan Ajar Baru' : 'Edit Bahan Ajar: ' + formData.kode }}</h3>
+      <form @submit.prevent="submitForm" @keydown="handleKeydown">
+        <input v-model="formData.kode" placeholder="Kode MK (contoh: EKMA4116)" :disabled="mode === 'edit'" required>
+        <input v-model="formData.judul" placeholder="Nama Mata Kuliah" required>
+        
+        <select v-model="formData.kategori" required>
+          <option value="">Pilih Kategori</option>
+          <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
+        </select>
+        
+        <select v-model="formData.upbjj" required>
+          <option value="">Pilih UT-Daerah</option>
+          <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+        </select>
+        
+        <input v-model="formData.lokasiRak" placeholder="Lokasi Rak (contoh: R1-A3)" required>
+        <input v-model.number="formData.harga" type="number" placeholder="Harga" required>
+        <input v-model.number="formData.qty" type="number" placeholder="Jumlah Stok" required>
+        <input v-model.number="formData.safety" type="number" placeholder="Safety Stock" required>
+        <input v-model="formData.catatanHTML" placeholder="Catatan (HTML)">
+        
+        <div class="form-buttons">
+          <button type="submit" class="btn-primary">Simpan</button>
+          <button type="button" @click="cancel" class="btn-secondary">Batal</button>
+        </div>
+        
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+          * Tekan Enter untuk menyimpan
+        </p>
+      </form>
+    </div>
+  </script>
+
+  <!-- Template: Stock Table -->
+  <script type="text/x-template" id="tpl-stock-table">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Kode/Nama MK</th>
+            <th>Kategori</th>
+            <th>UT-Daerah</th>
+            <th>Lokasi Rak</th>
+            <th>Harga</th>
+            <th>Stok</th>
+            <th>Safety</th>
+            <th>Status</th>
+            <th>Catatan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in stok" :key="item.kode">
+            <td>
+              <strong>{{ item.kode }}</strong><br>
+              <span v-text="item.judul"></span>
+            </td>
+            <td>{{ item.kategori }}</td>
+            <td>{{ item.upbjj }}</td>
+            <td>{{ item.lokasiRak }}</td>
+            <td>{{ item.harga | currency }}</td>
+            <td>{{ item.qty | qty }}</td>
+            <td>{{ item.safety | qty }}</td>
+            <td>
+              <span :class="getStatusClass(item)">
+                {{ getStatusText(item) }}
+              </span>
+            </td>
+            <td :title="item.catatanHTML">
+              <span v-html="item.catatanHTML"></span>
+            </td>
+            <td>
+              <button @click="editItem(item)" class="btn-edit">Edit</button>
+              <button @click="deleteItem(item)" class="btn-edit" style="background: #dc3545; color: white;">Hapus</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p v-if="stok.length === 0" class="no-data">
+        Tidak ada data yang sesuai dengan filter
+      </p>
+    </div>
+  </script>
+
+  <!-- Vue.js -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+  
+  <!-- Services -->
+  <script src="js/services/api.js"></script>
+  
+  <!-- Components -->
+  <script src="js/components/stock-filter.js"></script>
+  <script src="js/components/order-form.js"></script>
+  <script src="js/components/stock-table.js"></script>
+  
+  <!-- App -->
+  <script src="js/app-stok.js"></script>
+</body>
+</html>

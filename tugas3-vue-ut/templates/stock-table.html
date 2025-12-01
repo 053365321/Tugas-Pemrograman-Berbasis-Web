@@ -1,0 +1,50 @@
+<template id="tpl-stock-table">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Kode/Nama MK</th>
+          <th>Kategori</th>
+          <th>UT-Daerah</th>
+          <th>Lokasi Rak</th>
+          <th>Harga</th>
+          <th>Stok</th>
+          <th>Safety</th>
+          <th>Status</th>
+          <th>Catatan</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in stok" :key="item.kode">
+          <td>
+            <strong>{{ item.kode }}</strong><br>
+            <span v-text="item.judul"></span>
+          </td>
+          <td>{{ item.kategori }}</td>
+          <td>{{ item.upbjj }}</td>
+          <td>{{ item.lokasiRak }}</td>
+          <td>{{ item.harga | currency }}</td>
+          <td>{{ item.qty | qty }}</td>
+          <td>{{ item.safety | qty }}</td>
+          <td>
+            <span :class="getStatusClass(item)">
+              {{ getStatusText(item) }}
+            </span>
+          </td>
+          <td :title="item.catatanHTML">
+            <span v-html="item.catatanHTML"></span>
+          </td>
+          <td>
+            <button @click="editItem(item)" class="btn-edit">Edit</button>
+            <button @click="deleteItem(item)" class="btn-edit" style="background: #dc3545; color: white;">Hapus</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p v-if="stok.length === 0" class="no-data">
+      Tidak ada data yang sesuai dengan filter
+    </p>
+  </div>
+</template>

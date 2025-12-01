@@ -1,0 +1,40 @@
+<template id="tpl-stock-filter">
+  <div class="filter-section">
+    <h3>Filter & Sort</h3>
+    
+    <div class="filter-row">
+      <label>UT-Daerah:</label>
+      <select :value="filterUpbjj" @change="updateFilterUpbjj($event.target.value)">
+        <option value="">Semua UT-Daerah</option>
+        <option v-for="upbjj in upbjjList" :key="upbjj" :value="upbjj">{{ upbjj }}</option>
+      </select>
+    </div>
+
+    <div class="filter-row" v-show="filterUpbjj">
+      <label>Kategori:</label>
+      <select :value="filterKategori" @change="updateFilterKategori($event.target.value)">
+        <option value="">Semua Kategori</option>
+        <option v-for="kategori in availableKategori" :key="kategori" :value="kategori">{{ kategori }}</option>
+      </select>
+    </div>
+
+    <div class="filter-row">
+      <label>
+        <input type="checkbox" :checked="filterReorder" @change="updateFilterReorder($event.target.checked)"> 
+        Hanya stok yang perlu Re-order (Stok < Safety atau Kosong)
+      </label>
+    </div>
+
+    <div class="filter-row">
+      <label>Sort berdasarkan:</label>
+      <select :value="sortBy" @change="updateSortBy($event.target.value)">
+        <option value="">Tidak diurutkan</option>
+        <option value="judul">Judul (A-Z)</option>
+        <option value="qty">Stok (Terkecil)</option>
+        <option value="harga">Harga (Termurah)</option>
+      </select>
+    </div>
+
+    <button @click="resetFilter" class="btn-reset">Reset Filter</button>
+  </div>
+</template>

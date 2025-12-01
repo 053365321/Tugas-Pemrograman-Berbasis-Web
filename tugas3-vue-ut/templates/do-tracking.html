@@ -1,0 +1,80 @@
+<template id="tpl-do-tracking">
+  <div class="tracking-section">
+    <h3>Pencarian Delivery Order</h3>
+    
+    <div class="filter-section" style="margin-bottom: 20px;">
+      <div class="filter-row">
+        <label>Cari berdasarkan:</label>
+        <select v-model="searchType">
+          <option value="noDO">Nomor DO</option>
+          <option value="nim">NIM</option>
+        </select>
+        <input 
+          v-model="searchQuery" 
+          :placeholder="searchType === 'noDO' ? 'Masukkan Nomor DO' : 'Masukkan NIM'"
+          @keydown="handleKeydown"
+          style="margin-left: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; min-width: 250px;">
+      </div>
+      <p style="font-size: 12px; color: #666; margin-top: 10px;">
+        * Tekan Enter untuk mencari, ESC untuk reset
+      </p>
+    </div>
+    
+    <h3>Daftar Delivery Order</h3>
+    
+    <div v-if="Object.keys(filteredTracking).length === 0" class="no-data">
+      {{ searchQuery ? 'Tidak ditemukan data yang cocok' : 'Belum ada data delivery order' }}
+    </div>
+
+    <div v-for="(do_item, noDO) in filteredTracking" :key="noDO" class="do-card">
+      <div class="do-header">
+        <h4>{{ noDO }}</h4>
+        <span :class="'status-badge status-' + getStatusClass(do_item.status)">
+          {{ do_item.status }}
+        </span>
+      </div>
+
+      <div class="do-info">
+        <div class="info-row">
+          <span class="label">NIM:</span>
+          <span>{{ do_item.nim }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Nama:</span>
+          <span>{{ do_item.nama }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Ekspedisi:</span>
+          <span>{{ do_item.ekspedisi }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Paket:</span>
+          <span>{{ do_item.paket }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Tanggal Kirim:</span>
+          <span>{{ do_item.tanggalKirim | formatDate }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Total:</span>
+          <span>{{ do_item.total | currency }}</span>
+        </div>
+      </div>
+
+      <div class="tracking-timeline" v-if="do_item.perjalanan">
+        <h5>Timeline Pengiriman:</h5>
+        <div v-for="(step, index) in do_item.perjalanan" :key="index" class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <span class="timeline-time">{{ step.waktu }}</span>
+            <p>{{ step.keterangan }}</p>
+          </div>
+        </div>
+        
+        <button @click="addProgress(noDO)" class="btn-add" style="margin-top: 10px;">
+          + Tambah Progress
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
