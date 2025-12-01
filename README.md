@@ -1,4 +1,4 @@
-Dokumentasi Pengerjaan Tugas Pemrograman Berbasis Web (STSI4209)\
+Dokumentasi Pengerjaan Tugas Pemrograman Berbasis Web (STSI4209)
 
 Tugas 2 - Aplikasi Website Berbasis Vue.js Sebagai Framework.\
 ℹ️ Pengerjaan terdapat di folder /tugas2-vue-ut/
